@@ -2,6 +2,9 @@
 
 class Asset
 {
-    
+    public function __construct()
+    {
+        
+    }
 }
 
