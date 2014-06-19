@@ -1,0 +1,21 @@
+{
+    "name": "dustingraham/asset-manager",
+    "description": "Asset manager integrating assetic into Laravel 4",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Dustin Graham",
+            "email": "dusting@aja.com"
+        }
+    ],
+    "require": {
+        "php": ">=5.3.0",
+        "kriswallsmith/assetic": "1.2.*@dev"
+    },
+    "autoload": {
+        "psr-0": {
+            "Aja\\AssetManager": "src/"
+        }
+    },
+    "minimum-stability": "dev"
+}
