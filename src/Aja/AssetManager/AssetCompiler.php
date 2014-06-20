@@ -15,7 +15,6 @@ use Assetic\Filter\CssMinFilter;
 use Assetic\Factory\AssetFactory;
 
 use Config;
-use Illuminate\Filesystem\Filesystem;
 
 class AssetCompiler
 {
@@ -63,13 +62,7 @@ class AssetCompiler
         {
             $builder = $this->getBuilder($key);
             
-            foreach(array('css', 'js', 'less') as $sub)
-            {
-                if (!empty($config[$sub]))
-                {
-                    $builder->addFiles($sub, $config[$sub], ($sub == 'less' ? 'less' : null));
-                }
-            }
+            $builder->loadConfigFiles($config);
             
             $builders[] = $builder;
         }
@@ -137,13 +130,8 @@ class AssetCompiler
             $builder = $this->getBuilder($key);
             
             $config = $this->collections[$key];
-            foreach(array('css', 'js', 'less') as $sub)
-            {
-                if (!empty($config[$sub]))
-                {
-                    $builder->addFiles($sub, $config[$sub], ($sub == 'less' ? 'less' : null));
-                }
-            }
+            
+            $builder->loadConfigFiles($config);
             
             if (FALSE !== ($collection = $builder->getCollection($type)))
             {

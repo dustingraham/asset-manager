@@ -32,6 +32,25 @@ class AssetBuilder
         $this->addFiles('js', $files);
     }
     
+    public function loadConfigFiles($config)
+    {
+        foreach(array('css', 'js', 'less') as $sub)
+        {
+            if (!empty($config[$sub]))
+            {
+                if ($sub == 'less')
+                {
+                    // Special case for LESS files.
+                    $this->addFiles('css', $config[$sub], 'less');
+                }
+                else
+                {
+                    $this->addFiles($sub, $config[$sub]);
+                }
+            }
+        }
+    }
+    
     public function addFiles($type, $files, $filter = NULL)
     {
         if (is_null($filter))
