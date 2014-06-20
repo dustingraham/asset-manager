@@ -19,6 +19,12 @@ return array(
         'js' => '<script src="%s"></script>'
     ),
     
+    'paths' => array(
+        'asset_path' => public_path('assets'),
+        'public_path' => public_path(),
+        'build_subfolder' => 'builds'
+    ),
+    
     'filters' => array(
         'less' => array(
             'less',

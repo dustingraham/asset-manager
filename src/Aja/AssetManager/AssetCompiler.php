@@ -15,39 +15,40 @@ use Assetic\Filter\CssMinFilter;
 use Assetic\Factory\AssetFactory;
 
 use Config;
+use Illuminate\Filesystem\Filesystem;
 
 class AssetCompiler
 {
     protected $collections;
-    protected $buildpath;
     protected $assetFactory;
-
+    protected $writer;
+    protected $builders = array();
+    
     public function __construct()
     {
         $this->collections = Config::get('asset-manager::asset.collections');
-        $this->buildpath = 'builds';
         
         $this->configureAssetTools();
     }
-
+    
     protected function configureAssetTools()
     {
         $fm = new FilterManager();
-
+        
         $fm->set('less', new LessphpFilter());
         $fm->set('cssrewrite', new AssetCssUriRewriteFilter());
         $fm->set('cssmin', new CssMinFilter());
-
+        
         $fm->set('jscompile', new CompilerApiFilter());
         //$fm->set('jscompilejar', new CompilerJarFilter(storage_path('jar/compiler.jar')));
-
-        $factory = new AssetFactory(public_path());
+        
+        $factory = new AssetFactory(Config::get('asset-manager::asset.paths.asset_path'));
         $factory->setFilterManager($fm);
         $factory->setDebug(Config::get('app.debug'));
-
+        
         $this->assetFactory = $factory;
     }
-
+    
     public function build($collection = NULL, $overwrite = FALSE)
     {
         $builders = array();
@@ -60,11 +61,7 @@ class AssetCompiler
         
         foreach($this->collections as $key => $config)
         {
-            $builder = new AssetBuilder(
-                $key,
-                $this->buildpath,
-                $this->assetFactory
-            );
+            $builder = $this->getBuilder($key);
             
             foreach(array('css', 'js', 'less') as $sub)
             {
@@ -84,7 +81,7 @@ class AssetCompiler
             {
                 if ($overwrite || (!$production && $this->is_stale($collection)))
                 {
-                    $this->write($collection);
+                    $this->getWriter()->writeAsset($collection);
                     echo 'Wrote file. ['.$collection->getTargetPath().']'.PHP_EOL;
                 }
                 else
@@ -94,7 +91,7 @@ class AssetCompiler
             }
         }
     }
-
+    
     public function getFilesFor($type, $args)
     {
         // FIX ME
@@ -117,31 +114,27 @@ class AssetCompiler
     
     public function getFilesForProduction($type, $args)
     {
-        $build = trim($this->buildpath, '/').'/';
-
+        // Build Subfolder
+        $build_subfolder = trim(Config::get('asset-manager::asset.paths.build_subfolder'), '/').'/';
+        
         $results = array();
         foreach($args as $key)
         {
-            $filename = $build.$key.'.'.$type;
-            $results[] = asset($build.$key.'.'.$type).'?'.md5_file($filename);
+            $results[] = $this->generateAssetUri(
+                $build_subfolder .
+                $key.'.'.$type
+            );
         }
         return $results;
     }
     
     public function getFilesForDevelopment($type, $args)
     {
-        $result = array();
-
-        // For writing (for less stylesheets.)
-        $writer = new AssetWriter(public_path());
-
+        $results = array();
+        
         foreach($args as $key)
         {
-            $builder = new AssetBuilder(
-                $key,
-                $this->buildpath,
-                $this->assetFactory
-            );
+            $builder = $this->getBuilder($key);
             
             $config = $this->collections[$key];
             foreach(array('css', 'js', 'less') as $sub)
@@ -158,23 +151,29 @@ class AssetCompiler
                 {
                     if ($this->is_stale($asset))
                     {
-                        $writer->writeAsset($asset);
+                        $this->getWriter()->writeAsset($asset);
                     }
-                    
-                    $filename = $asset->getTargetPath();
-                    $result[] = asset($filename).'?'.md5_file($filename);
+                    $results[] = $this->generateAssetUri($asset->getTargetPath());
                 }
             }
         }
         
-        return $result;
+        return $results;
+    }
+    
+    protected function generateAssetUri($target)
+    {
+        $public = Config::get('asset-manager::asset.paths.public_path');
+        $public = rtrim($public, '/').'/';
+        
+        return asset($target).'?'.md5_file($public.$target);
     }
     
     protected function is_stale(AssetInterface $asset)
     {
         $stale = TRUE;
         
-        $target = public_path($asset->getTargetPath());
+        $target = $asset->getTargetPath();
         
         if (file_exists($target))
         {
@@ -189,9 +188,28 @@ class AssetCompiler
         return $stale;
     }
     
-    protected function write($collection)
+    protected function getBuilder($key)
     {
-        $writer = new AssetWriter(public_path());
-        $writer->writeAsset($collection);
+        if (!isset($this->builders[$key]))
+        {
+            $this->builders[$key] = new AssetBuilder(
+                $key,
+                Config::get('asset-manager::asset.paths.build_subfolder'),
+                $this->assetFactory
+            );
+        }
+        
+        return $this->builders[$key];
     }
+    
+    protected function getWriter()
+    {
+        if (is_null($this->writer))
+        {
+            $this->writer = new AssetWriter(Config::get('asset-manager::asset.paths.public_path'));
+        }
+    
+        return $this->writer;
+    }
+    
 }
