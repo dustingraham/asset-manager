@@ -42,4 +42,18 @@ Compile production assets using
 
     > php artisan aja:asset
 
+Include the tags to output CSS and JS respectively.
+
+    <html>
+        <head>
+            ...
+            <?php echo Asset::Stylesheets(); ?>
+            ...
+        </head>
+        <body>
+            ...
+            <?php echo Asset::Javascripts(); ?>
+            ...
+        </body>
+    <html>
 
