@@ -1,6 +1,7 @@
 {
     "name": "dustingraham/asset-manager",
     "description": "Asset manager integrating assetic into Laravel 4",
+    "version": "0.1.0",
     "license": "MIT",
     "authors": [
         {
